@@ -7,6 +7,7 @@ import '../providers/recipe_provider.dart';
 import '../providers/auth_provider.dart';
 import 'add_recipe_page.dart';
 import 'profile_page.dart';
+import 'recipe_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -91,117 +92,158 @@ class _HomePageState extends State<HomePage> {
           }
 
           return AnimationLimiter(
-            child: ListView.builder(
+            child: GridView.builder(
               padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3, // 3 columns
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.75, // Adjust card height
+              ),
               itemCount: provider.recipes.length,
               itemBuilder: (context, index) {
                 final recipe = provider.recipes[index];
-                return AnimationConfiguration.staggeredList(
+                return AnimationConfiguration.staggeredGrid(
                   position: index,
                   duration: const Duration(milliseconds: 375),
-                  child: SlideAnimation(
-                    verticalOffset: 50.0,
+                  columnCount: 3,
+                  child: ScaleAnimation(
                     child: FadeInAnimation(
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RecipeDetailPage(recipe: recipe),
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header Image
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                              child: AspectRatio(
-                                aspectRatio: 16 / 9,
-                                child: Image.network(
-                                  recipe.photoUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Colors.grey[200],
-                                      child: const Icon(Icons.broken_image, color: Colors.grey),
-                                    );
-                                  },
-                                ),
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
                               ),
-                            ),
-                            // Content
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Image
+                              Expanded(
+                                flex: 3,
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(16),
+                                  ),
+                                  child: Stack(
+                                    fit: StackFit.expand,
                                     children: [
-                                      Expanded(
-                                        child: Text(
-                                          recipe.title,
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.secondaryColor,
-                                          ),
-                                        ),
+                                      Image.network(
+                                        recipe.photoUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Container(
+                                            color: Colors.grey[200],
+                                            child: const Icon(
+                                              Icons.broken_image,
+                                              color: Colors.grey,
+                                            ),
+                                          );
+                                        },
                                       ),
+                                      // Delete button overlay for owner
                                       Consumer<AuthProvider>(
                                         builder: (context, auth, _) {
-                                          // Only show delete if user owns it
                                           if (auth.currentUser?.id == recipe.userId) {
-                                              return IconButton(
-                                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                                onPressed: () {
-                                                   _showDeleteDialog(context, recipe.id);
-                                                },
-                                              );
+                                            return Positioned(
+                                              top: 8,
+                                              right: 8,
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: IconButton(
+                                                  icon: const Icon(
+                                                    Icons.delete_outline,
+                                                    color: Colors.red,
+                                                    size: 20,
+                                                  ),
+                                                  onPressed: () {
+                                                    _showDeleteDialog(context, recipe.id);
+                                                  },
+                                                ),
+                                              ),
+                                            );
                                           }
                                           return const SizedBox();
                                         },
-                                      )
+                                      ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    recipe.description,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTheme.bodyMedium,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
+                                ),
+                              ),
+                              // Content
+                              Expanded(
+                                flex: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Icon(Icons.person, size: 16, color: Colors.grey[600]),
-                                      const SizedBox(width: 4),
                                       Text(
-                                        recipe.user?.name ?? 'Unknown',
-                                        style: TextStyle(
-                                            color: Colors.grey[600], fontSize: 12),
+                                        recipe.title,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.secondaryColor,
+                                        ),
                                       ),
                                       const Spacer(),
-                                      const Icon(Icons.favorite, size: 16, color: Colors.redAccent),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "${recipe.likesCount}",
-                                        style: TextStyle(
-                                            color: Colors.grey[600], fontSize: 12),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.favorite,
+                                            size: 14,
+                                            color: Colors.redAccent,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${recipe.likesCount}',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          const Icon(
+                                            Icons.comment,
+                                            size: 14,
+                                            color: Colors.grey,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${recipe.commentsCount}',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),

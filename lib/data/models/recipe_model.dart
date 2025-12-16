@@ -12,6 +12,7 @@ class Recipe {
   final int likesCount;
   final int commentsCount;
   final User? user;
+  final bool isLiked; // Added for like status
 
   Recipe({
     required this.id,
@@ -25,6 +26,7 @@ class Recipe {
     required this.likesCount,
     required this.commentsCount,
     this.user,
+    this.isLiked = false, // Default to false
   });
 
   // Helper function to safely parse integers from dynamic values
@@ -47,6 +49,7 @@ class Recipe {
       likesCount: _parseInt(json['likes_count'] ?? 0),
       commentsCount: _parseInt(json['comments_count'] ?? 0),
       user: json['user'] != null ? User.fromJson(json['user']) : null,
+      isLiked: json['is_liked'] ?? false,
     );
   }
 
