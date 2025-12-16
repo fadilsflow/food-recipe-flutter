@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +7,11 @@ import '../core/theme/app_theme.dart';
 import '../providers/recipe_provider.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
+
+// Conditional imports
+import 'add_recipe_page_stub.dart'
+    if (dart.library.io) 'add_recipe_page_mobile.dart'
+    if (dart.library.html) 'add_recipe_page_web.dart' as platform;
 
 class AddRecipePage extends StatefulWidget {
   const AddRecipePage({super.key});
@@ -20,16 +26,28 @@ class _AddRecipePageState extends State<AddRecipePage> {
   final _descriptionController = TextEditingController();
   final _methodController = TextEditingController();
   final _ingredientsController = TextEditingController();
-  File? _selectedImage;
+  dynamic _selectedImage; // Can be File (mobile) or html.File (web)
+  Uint8List? _webImageBytes; // For web preview
 
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-      });
+      if (kIsWeb) {
+        // Web: read bytes for preview
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _webImageBytes = bytes;
+          _selectedImage = image; // Store XFile for web
+        });
+      } else {
+        // Mobile: use File
+        final file = await platform.convertToFile(image);
+        setState(() {
+          _selectedImage = file;
+        });
+      }
     }
   }
 
@@ -43,12 +61,17 @@ class _AddRecipePageState extends State<AddRecipePage> {
       }
 
       try {
+        // Convert XFile to appropriate type for the platform
+        final photoFile = kIsWeb 
+            ? await platform.convertToFile(_selectedImage as XFile)
+            : _selectedImage;
+            
         await context.read<RecipeProvider>().addRecipe(
               title: _titleController.text,
               description: _descriptionController.text,
               cookingMethod: _methodController.text,
               ingredients: _ingredientsController.text,
-              photo: _selectedImage!,
+              photo: photoFile,
             );
         if (!mounted) return;
         Navigator.pop(context);
@@ -89,12 +112,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                    image: _selectedImage != null
-                        ? DecorationImage(
-                            image: FileImage(_selectedImage!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
+                    image: _getImageDecoration(),
                   ),
                   child: _selectedImage == null
                       ? const Column(
@@ -150,5 +168,23 @@ class _AddRecipePageState extends State<AddRecipePage> {
         ),
       ),
     );
+  }
+
+  DecorationImage? _getImageDecoration() {
+    if (_selectedImage == null) return null;
+    
+    if (kIsWeb && _webImageBytes != null) {
+      return DecorationImage(
+        image: MemoryImage(_webImageBytes!),
+        fit: BoxFit.cover,
+      );
+    } else if (!kIsWeb && _selectedImage != null) {
+      return DecorationImage(
+        image: platform.getFileImage(_selectedImage),
+        fit: BoxFit.cover,
+      );
+    }
+    
+    return null;
   }
 }
