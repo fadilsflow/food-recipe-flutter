@@ -1,12 +1,9 @@
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-// Web implementation
-Future<html.File> convertToFile(XFile xFile) async {
-  final bytes = await xFile.readAsBytes();
-  final blob = html.Blob([bytes]);
-  return html.File([blob], xFile.name);
+// Web implementation - just return the XFile as-is
+Future<XFile> convertToFile(XFile xFile) async {
+  return xFile;
 }
 
 ImageProvider getFileImage(dynamic file) {

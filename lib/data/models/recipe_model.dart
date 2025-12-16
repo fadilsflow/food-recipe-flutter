@@ -11,7 +11,7 @@ class Recipe {
   final DateTime createdAt;
   final int likesCount;
   final int commentsCount;
-  final User? user; // Optional because sometimes it might not be nested depending on the API variant, but docs say it is.
+  final User? user;
 
   Recipe({
     required this.id,
@@ -27,18 +27,25 @@ class Recipe {
     this.user,
   });
 
+  // Helper function to safely parse integers from dynamic values
+  static int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.parse(value);
+    return 0;
+  }
+
   factory Recipe.fromJson(Map<String, dynamic> json) {
     return Recipe(
-      id: json['id'],
-      userId: json['user_id'],
-      title: json['title'],
-      description: json['description'],
-      cookingMethod: json['cooking_method'],
-      ingredients: json['ingredients'],
-      photoUrl: json['photo_url'],
+      id: _parseInt(json['id']),
+      userId: _parseInt(json['user_id']),
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      cookingMethod: json['cooking_method'] ?? '',
+      ingredients: json['ingredients'] ?? '',
+      photoUrl: json['photo_url'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
-      likesCount: json['likes_count'] ?? 0,
-      commentsCount: json['comments_count'] ?? 0,
+      likesCount: _parseInt(json['likes_count'] ?? 0),
+      commentsCount: _parseInt(json['comments_count'] ?? 0),
       user: json['user'] != null ? User.fromJson(json['user']) : null,
     );
   }

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../data/models/recipe_model.dart';
 import '../data/services/recipe_service.dart';
@@ -8,18 +7,22 @@ class RecipeProvider with ChangeNotifier {
 
   List<Recipe> _recipes = [];
   bool _isLoading = false;
+  String? _errorMessage;
 
   List<Recipe> get recipes => _recipes;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
   Future<void> fetchRecipes() async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
       _recipes = await _recipeService.getRecipes();
     } catch (e) {
-      // You might want to handle error state here
+      _errorMessage = e.toString();
+      print('Error fetching recipes: $e'); // Debug log
       rethrow; 
     } finally {
       _isLoading = false;
@@ -32,9 +35,10 @@ class RecipeProvider with ChangeNotifier {
     required String cookingMethod,
     required String ingredients,
     required String description,
-    required File photo,
+    required dynamic photo, // Changed from File to dynamic for web compatibility
   }) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -47,6 +51,8 @@ class RecipeProvider with ChangeNotifier {
       );
       _recipes.insert(0, newRecipe); // Add to top
     } catch (e) {
+      _errorMessage = e.toString();
+      print('Error adding recipe: $e'); // Debug log
       rethrow;
     } finally {
       _isLoading = false;
@@ -55,12 +61,13 @@ class RecipeProvider with ChangeNotifier {
   }
 
   Future<void> deleteRecipe(int id) async {
-    // Optimistic update or wait? Let's wait.
     try {
       await _recipeService.deleteRecipe(id);
       _recipes.removeWhere((r) => r.id == id);
       notifyListeners();
     } catch (e) {
+      _errorMessage = e.toString();
+      print('Error deleting recipe: $e'); // Debug log
       rethrow;
     }
   }

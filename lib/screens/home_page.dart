@@ -19,8 +19,20 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RecipeProvider>().fetchRecipes();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await context.read<RecipeProvider>().fetchRecipes();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error loading recipes: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
     });
   }
 

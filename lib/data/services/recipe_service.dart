@@ -18,7 +18,7 @@ class RecipeService {
     try {
       final response = await _dioClient.dio.get(ApiConstants.recipesEndpoint);
 
-      if (response.statusCode == 200 && response.data['status'] == 'success') {
+        if (response.statusCode == 200 && response.data['status'] == 'success') {
         final List<dynamic> data = response.data['data']['data']; // Pagination structure
         return data.map((json) => Recipe.fromJson(json)).toList();
       } else {

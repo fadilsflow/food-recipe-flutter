@@ -5,11 +5,18 @@ class User {
 
   User({required this.id, required this.name, required this.email});
 
+  // Helper function to safely parse integers from dynamic values
+  static int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.parse(value);
+    return 0;
+  }
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
+      id: _parseInt(json['id']),
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
     );
   }
 
