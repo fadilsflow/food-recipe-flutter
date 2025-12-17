@@ -6,7 +6,7 @@ import 'dio_client.dart';
 class AuthService {
   final DioClient _dioClient;
 
-  AuthService() : _dioClient = DioClient();
+  AuthService({DioClient? dioClient}) : _dioClient = dioClient ?? DioClient();
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
